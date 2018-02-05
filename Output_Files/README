@@ -1,0 +1,3 @@
+This directory contains the output of each algorithm for each input file.
+
+The script diff_script.sh verifies that the output of each algorithm is the same for each file.

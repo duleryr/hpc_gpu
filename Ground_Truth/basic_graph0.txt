@@ -1,0 +1,4 @@
+0 1 2 3
+inf 0 1 2
+inf inf 0 1
+inf inf inf 0
