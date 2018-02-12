@@ -4,7 +4,7 @@ CXXFLAGS=-Wall -Wextra -std=c++11 -fopenmp
 
 SRCDIR=./src
 TESTDIR=./Unit_Tests
-CSOURCE=$(SRCDIR)/Floyd_Warshall.cpp $(SRCDIR)/Dijsktra.cpp
+CSOURCE=$(SRCDIR)/Floyd_Warshall.cpp
 CSMAIN=$(SRCDIR)/main.cpp
 CSTEST=$(TESTDIR)/bloc_layout.cpp
 

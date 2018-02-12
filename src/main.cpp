@@ -5,12 +5,10 @@
 #include <cstdlib>
 #include <unistd.h>
 
-#include "Dijsktra.h"
 #include "Floyd_Warshall.h"
 #include "BlockTimerSeq.h"
 #include "BlockTimerPar.h"
 #include "Parser.h"
-#include "Edge.h"
 #include "Tools.h"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -158,25 +156,6 @@ int main(int argc, char** argv)
                 save_in_file(distance_matrix, filename, "FW_seq_mem_skip");
         }
 
-        /*-----------------------------------DIJKSTRA SEQUENTIAL--------------------------------*/
-        /*
-        if (algorithm == "" || algorithm == "DIJK") 
-        {
-            vector<vector<Edge>> vertex_matrix = Parser::get_edge_representation("./Input_Files/" + filename + ".txt");
-            BlockTimerSeq time;
-            for (int i = 0; i < V; i++) {
-                for (int j = 0; j < V; j++) {
-                    distance_matrix[i][j] = dijkstra_seq(vertex_matrix, i, j);
-                }
-            }
-            time.display(*stream, "DIJK_SEQ", "Dijkstra Sequential", 1);
-
-            if (tolower(saveInFile[0]) == 'y') {
-                save_in_file(distance_matrix, filename, "D_seq");
-            }
-
-        }
-*/
         /*------------------------------FLOYD_WARSHALL_PARALLEL1_C----------------------------------*/
 /*           
         if (algorithm == "" || algorithm == "FW1_C")

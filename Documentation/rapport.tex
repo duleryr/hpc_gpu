@@ -2,14 +2,14 @@
 \pagestyle{headings}
 
 \usepackage[utf8]{inputenc}
-\usepackage[spanish]{babel}
+\usepackage[french]{babel}
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage[T1]{fontenc}
 \graphicspath{{images/}}
 
-\title{Implementación paralela de los algoritmos de "shortest-path" en grafo}
-\author{DULERY Romain}
+\title{Optimisation parallèle de l'algorithme de Floyd-Warshall}
+\author{Romain DULERY}
 \date{\today}
 
 \setlength{\oddsidemargin}{0.2cm}
@@ -23,226 +23,231 @@
 \begin{document}
 
 \maketitle
-\vspace{1cm}
 
-\section{Presentación general del proyecto y del trabajo realisado}
+\tableofcontents
+\newpage
 
-El proyecto consiste en la implementación paralela de los algoritmos de "shortest-path", en particular los algoritmos de Floyd-Warshall y de Dijsktra.\\\\
-El objectivo es que los algoritmos sean utilizados sobre las placas Xeon Phi 3120P, que utilizan openMP con el compilador icc de intel.\\\\
-Las technologias usadas fueron C++, OpenMP para paralelizar, y Python3 para hacer scripts. Tambien usé Valgrind para las analisas de desempeño.\\\\
-Me concentré en la optimisación del algoritmo de Floyd-Warshall, haciendo muchas versiones diferentes de este algoritmo.\\\\
-Hice una plataforma de test de desempeño, para generar automaticamente las matriz de entrada, y los resultados de desempeño para cada algoritmo.\\\\
-En la parte siguiente se puede encontrar las metodas usadas en este plataforma, y despues sigue la presentación de los algoritmos realisados.\\\\
+\section{Présentation générale du projet, objectifs et travail réalisé}
 
-\section{Presentación de la plataforma de desarrollo}
+L'objectif du projet est d'optimiser l'algorithme de Floyd-Warshall à l'aide d'une implémentation parallèle, en OpenMP et OpenCL. L'accent sera mis sur l'optimisation spatiale de la mémoire, étant donné que l'algorithme est relativement simple et classique.\\\\
+Les technologies utilisées sont C++11, OpenMP, Python3 pour les scripts, et Valgrind pour les analyses d'optimisation.\\\\
+J'ai réalisé une plateforme de test de performance, pour générer automatiquement les données d'entrée, et les performances respectives des différents algorithmes.\\\\
+Dans la partie suivante, sont présentées les méthodes de cette plateforme, le format de données utilisé, les scripts et un exemple d'exécution.\\\\
 
-Se presenta con la siguiente organización :
+\section{Présentation de la plateforme de développement}
 
-\begin{figure}
+Elle se présente de la manière suivante :
+
+\begin{figure}[H]
 \begin{center}
   \includegraphics[scale=0.6]{arborescence.png}
-  \caption{Organización de la carpeta}
+  \caption{Arborescence utilisée}
 \end{center}
 \end{figure}
 
-\subsection{Datos de entrada}
+\subsection{Données d'entrée}
 
-Empezamos con los datos de entrada, que estan en la carpeta llamada Input\_Files.
+Celles-ci se trouvent dans le dossier Input\_Files.
 
-\subsubsection{Formato de datos}
+\subsubsection{Format de données}
 
-El formato elegido es el siguiente :
+Le format choisi est le suivant :
 
-La primera linea indiqua el numero de vértices y de aristas.
-Despues cada linea representa una arista, con el numero de vértice de inicio, el numero de vértice de fin, y el peso.
+La première ligne indique le nombre de sommets et d'arêtes.
+Ensuite, chaque ligne représente une arête, avec le numéro du sommet initial, le numéro du sommet d'arrivée, et le poids associé à l'arête.
 
-Los numeros de vertices siempre empezan de 0.\\
+Les numéros de sommet commencent à 0.
 
-\noindent Por ejemplo, este grafo :
+\noindent Par exemple, ce graphe :
 
 \begin{figure}[h]
 \begin{center}
   \includegraphics[scale=0.7]{input_exemple.png}
-  \caption{Grafo de ejemplo}
+  \caption{Graphe d'exemple}
 \end{center}
 \end{figure}
 
-\noindent es representado de la manera siguiente :
+\noindent Est représenté de la manière suivante :
 
 \begin{figure}[h]
 \begin{center}
   \includegraphics[scale=0.7]{input_graph4.png}
-  \caption{Datos de entrada correspondientes}
+  \caption{Données d'entrée correspondantes}
 \end{center}
 \end{figure}
 
-\subsubsection{Generación de los archivos de entrada}
+\subsubsection{Génération de données d'entrée}
 
-En la carpeta Scripts\_Python se pueden encontrar los scripts \textbf{Input\_Files\_Generator.py} y \textbf{Special\_File\_Generator.py} que creen datos de entrada.
+Dans le dossier Scripts\_Python se trouvent les scripts \textbf{Input\_Files\_Generator.py} et \textbf{Special\_File\_Generator.py}, qui créent des données d'entrée.
 
-El primero genera 30 archivos de entrada con el nombre indicado en argumento 1 y el numero de vertices aleatorio entre V/2 y V, donde V es el numero pasado en argumento 2. Hay tambien el numero de aristas en tercero argumento, aunque no influye la complejidad. El peso de cada arista es aleatorio entre 1 y 100.
+Le premier génère 30 fichiers d'entrée. Les arguments sont le nom des fichiers générées, le nombre de sommets (aléatoire entre V/2 et V où V est l'argument), et le nombre d'arêtes en troisième argument, bien que celui-ci n'influe pas la complexité de l'algorithme, il sera quand même utile pour certains algorithmes. Le poids de chaque arête est aléatoire entre 1 et 100.
 
-El secundo script es lo mismo pero por un solo archivo, con numeros exactos de vertices y aristas.
+Le second script est le même que le premier, pour un seul fichier, avec un nombre exact de sommets et d'arêtes. Il sert à générer des graphes de référence.
 
-\subsubsection{Datos utilisados}
+\subsubsection{Données utilisées}
 
-\noindent En todo el documento V es el numero de vertices, y E el numero de aristas.
+\noindent Dans tout le rapport, V représente le nombre de sommets, et E le nombre d'arêtes.
 
-\noindent Usé grafos ordenados en 7 categorias :
+\noindent J'ai utilisé des graphes ordonnés en 7 catégories :
 
 \begin{itemize}
-  \item basicos (basic\_graphX)\\
-    Estan muy simple, sirven para testear el functionamiento basico de los algoritmos.
-    El grafo de la Figura 2 es el basic\_graph4.
-  \item simples (simple\_graphX)\\
-    V entre 5 y 20
-    E entre 10 y 30
-  \item medios (medium\_graphX)\\
-    V entre 100 y 1000
-    E entre 200 y 5000
-  \item complejos (complex\_graphX)\\
-    V entre 1000 y 2000
-    E entre 1000 y 10000
-  \item re complejos (very\_complex\_graphX)\\
-    V entre 2000 y 5000
-    E entre 10000 y 50000
-  \item enormes (huge\_graphX)\\
-    V entre 5000 y 10000
-    E entre 50000 y 150000
-  \item referencia (reference\_graphX)\\
-    Son 6 grafos con V = 400, 800, 1200, 1600, 2000 y 3200
+  \item Basiques (basic\_graphX)\\\\
+    Ils servent à tester le fonctionnement basique des algorithmes.
+    Le graphe de la figure 2 est le basic\_graph4.\\
+
+  \item Simples (simple\_graphX)\\\\
+    V entre 5 et 20
+    E entre 10 et 30\\
+
+  \item Moyens (medium\_graphX)\\\\
+    V entre 100 et 1000
+    E entre 200 et 5000\\
+
+  \item Complexes (complex\_graphX)\\\\
+    V entre 2000 et 5000
+    E entre 10000 et 50000\\
+
+  \item Enormes (huge\_graphX)\\\\
+    V entre 5000 et 10000
+    E entre 50000 et 150000\\
+
+  \item Références (reference\_graphX)\\\\
+    Ce sont 6 graphes avec V = 400, 800, 1200, 1600, 2000 et 3200\\
+
+Cela reste des graphes relativement petits pour pouvoir réaliser une comparaison pertinente des performances, notamment pour conjecturer le comportement lorsque V tend vers l'infini.
+
 \end{itemize}
 
-\subsection{Datos de salida}
+\subsection{Données de sortie}
 
-Los datos de salida estan simplemente la matriz de distancias entre cada vertice. Pueden estar salvados en archivos con una opción del main, que esta en la subparte siguiente.
+Les données de sortie sont simplement la matrice de distances entre chaque sommet. Elles peuvent être sauvegardées dans des fichiers via une option du main, présentée dans la sous-partie suivante.
 
-\subsection{Makefile y main}
+\subsection{Makefile et main}
 
-Al principio hay que generar el main con \textbf{make}. Puede ser usado con \textbf{make debug} o \textbf{make sinopti} para generar el main en version debug o en version sin la optimisación O3 del compilador.
+Le main se génère via le \textbf{make}. Il peut être utilisé comme \textbf{make debug} ou \textbf{make sinopti}, pour générer le main en version débug, ou en version sans optimisation O3 du compilateur.
 
-El main pregunta para elegir un archivo de entrada, y despues ejecuta todos los algoritmos con este entrada, monstrando los tiempos de ejecución de cada algoritmo.
+Le main demande un fichier d'entrée, et exécute chaque algorithme, en affichant les temps d'exécution de chaque algorithme sur la sortie standard.
 
 \begin{figure}[H]
 \begin{center}
   \includegraphics[scale=0.7]{main.png}
-  \caption{Una ejecución del main}
+  \caption{Une exécution du main}
 \end{center}
 \end{figure}
 
-\noindent El main tiene tambien bastante opciones para usarlo de manera diferente, hay :
+\noindent Il possède également plusieurs options pour modifier le comportement, comme par exemple :
 
 \begin{itemize}
-    \item -a : para elegir un solo algoritmo
-    \item -d : para salvar los datos de salida de cada algoritmo en archivos, en la carpeta Output\_Files
-    \item -t : para salvar los tiempos de ejecución para cada entrada en archivos, en la carpeta Calcul\_Times
-    \item -c : para tomar todas las entradas de una categoria (simple, medios, complejos...)
-    \item -g : para elegir el grafo de entrada
-    \item -h : para mostrar la ayuda
-    \item -s : para elegir el paso de algunos algoritmos que estan presentados en la parte siguiente.
+    \item -a : pour choisir un seul algorithme
+    \item -d : pour sauvegarder les données de sortie de chaque algorithme dans des fichiers, dans le dossier Output\_Files
+    \item -t : pour sauvegarder les temps d'exécution pour chaque entrée dans des fichiers, dans le dossier Calcul\_Times
+    \item -c : pour exécuter les algorithmes sur tous les fichiers d'entrée d'une catégorie (moyen, complexe..)
+    \item -g : pour choisir le graphe d'entrée (sans que le main le demande, afin d'automatiser les résultats)
+    \item -h : pour afficher l'aide
+    \item -s : pour choisir le pas de certains algorithmes, présentés dans la partie suivante.
 \end{itemize}
 
-\section{Presentacion de cada algoritmo}
+\section{Présentation de chaque algorithme}
 
-Cada algoritmo tiene un codigo de entrada y un codigo de salida.
+Chaque algorithme est représenté par un code d'entrée et un code de sortie.
 
-El codigo de entrada sirve para la opción -a del main, y el codigo de salida sirve para la opción -t del main.
+Le code d'entrée sert pour l'option -a du main, et le code de sortie sert pour l'option -t du main.
 
-\subsection{Floyd-Warshall secuencial}
+\subsection{Floyd-Warshall séquentiel}
 
-\noindent Codigo de entrada : FW\_SEQ \\
-Codigo de salida : FWSeq
+\noindent Code d'entrée : FW\_SEQ \\
+Code de sortie : FWSeq
 
 \begin{figure}[H]
 \begin{center}
   \includegraphics[scale=0.7]{FW_SEQ.png}
-  \caption{Algoritmo de Floyd-Warshall}
+  \caption{Algorithme de Floyd-Warshall}
 \end{center}
 \end{figure}
 
-Es el algoritmo basico de Floyd-Warshall.
+C'est l'algorithme basique de Floyd-Warshall.
 
-\subsection{Floyd-Warshall secuencial con memoización}
+\subsection{Floyd-Warshall séquentiel avec mémoïzation}
 
-\noindent Codigo de entrada : FW\_SEQ\_MEM \\
-Codigo de salida : FWSqM
+\noindent Code d'entrée : FW\_SEQ\_MEM \\
+Code de sortie : FWSqM
 
 \begin{figure}[H]
 \begin{center}
   \includegraphics[scale=0.6]{FW_SEQ_MEM.png}
-  \caption{Algoritmo de Floyd-Warshall con memoización}
+  \caption{Algorithme de Floyd-Warshall avec mémoïzation}
 \end{center}
 \end{figure}
 
-Es el algoritmo basico, con memorisacion de la distancia IK, porque es recalculada cada vez para nada en la bucle sobre j.
+C'est l'algorithme basique, avec mémorisation de la distance IK, qui est recalculée à chaque pour rien dans la dernière boucle sur j dans la version initiale.
 
-Eso permite tambien de reducir el numero de fallas de cache.
+Cela permet également de réduire le nombre de défauts de cache.
 
-\subsection{Floyd-Warshall secuencial con memoizacion y saltando infinitos}
+\subsection{Floyd-Warshall séquentiel avec mémoïzation et sauts d'infinis}
 
-\noindent Codigo de entrada : FW\_SEQ\_MEM\_SKIP \\
-Codigo de salida : FWSMS
+\noindent Code d'entrée : FW\_SEQ\_MEM\_SKIP \\
+Code de sortie : FWSMS
 
 \begin{figure}[H]
 \begin{center}
   \includegraphics[scale=0.6]{FW_SEQ_MEM_SKIP.png}
-  \caption{Algoritmo de Floyd-Warshall con memoización y saltos de infinitos}
+  \caption{Algorithme de Floyd-Warshall avec mémoïzation et sauts d'infinis}
 \end{center}
 \end{figure}
 
-Es el algoritmo basico, con memorisacion de la distancia IK, y saltando las columnas que tienen una valor infinita.
+C'est l'algorithme basique, avec mémoïzation de IK, et sauts d'infinis. Les sauts d'infinis font alors dépendre le temps de calcul du nombre d'arêtes, alors que normalement seul le nombre de sommets interviennent dans le calcul de la complexité.
 
-Cada algoritmo que sigue utiliza este memorisacion y salta las valores infinitas.
+Chaque algorithme qui suit utilisera les deux techniques de mémoïzation et sauts d'infinis.
 
-\subsection{Floyd-Warshall paralelizado sobre las lineas}
+\subsection{Floyd-Warshall parallélizé sur les lignes}
 
-\noindent Codigo de entrada : FW\_PAR1\_L \\
-Codigo de salida : FWP1L
+\noindent Code d'entrée : FW\_PAR1\_L \\
+Code de sortie : FWP1L
 
 \begin{figure}[H]
 \begin{center}
   \includegraphics[scale=0.6]{FW_PAR1_L.png}
-  \caption{Algoritmo de Floyd-Warshall parelelo sobre las lineas}
+  \caption{Algorithme de Floyd-Warshall parallèle sur les lignes}
 \end{center}
 \end{figure}
 
-La matriz es cortada en bloques horizontales, y cada thread trabaja sobre un bloque.
+La matrice est décomposée en bloc horizontaux, et chaque thread travaille sur un bloc.
 
-\subsection{Floyd-Warshall paralelizado sobre las columnas}
+\subsection{Floyd-Warshall parallélizé sur les colonnes}
 
-\noindent Codigo de entrada : FW\_PAR1\_C \\
-Codigo de salida : FWP1C
+\noindent Code d'entrée : FW\_PAR1\_C \\
+Code de sortie : FWP1C
 
 \begin{figure}[H]
 \begin{center}
   \includegraphics[scale=0.6]{FW_PAR1_C.png}
-  \caption{Algoritmo de Floyd-Warshall parelelo sobre las columnas}
+  \caption{Algorithme de Floyd-Warshall parallèle sur les colonnes}
 \end{center}
 \end{figure}
 
-Es lo mismo que el algoritmo de antes, pero sobre las columnas.
+Idem que le précédent, sur les colonnes.
 
-\subsection{Floyd-Warshall secuencial, con una matriz cortada en bloques cuadrados}
+\subsection{Floyd-Warshall séquentiel, avec une matrice coupée en blocs carrés}
 
-\noindent Codigo de entrada : FW\_SEQ\_TILED \\
-Codigo de salida : FWSTI (Floyd-Warshall sequential tiled-implemented)
+\noindent Code d'entrée : FW\_SEQ\_TILED \\
+Code de sortie : FWSTI (Floyd-Warshall séquentiel "tiled-implemented")
 
 \begin{figure}[H]
 \begin{center}
   \includegraphics[scale=0.6]{FW_SEQ_TILED.png}
-  \caption{Algoritmo de Floyd-Warshall con una matriz cortada en bloques}
+  \caption{Algorithme de Floyd-Warshall séquentiel en "tiled-implemented"}
 \end{center}
 \end{figure}
 
-Es un algoritmo de transicion hasta el algoritmo siguiente.
+C'est un algorithme de transition vers l'algorithme suivant.
 
-La idea es de cortar la matriz en bloques cuadrados, y de tratarla en un orden particular :
+L'idée est de couper la matrice en blocs carrés, et de la traiter selon un ordre particulier :
 
 \begin{minipage}{0.50\linewidth}
   \begin{enumerate}
-    \item El bloque (k, k)
-    \item La linea y la columna del bloque, que solo depienden del bloque (k,k)
-    \item Lo que queda
+    \item Le bloc (k, k)
+    \item La ligne et la colonne du bloc, qui dépendent seulement du bloc (k,k)
+    \item Ce qu'il reste
   \end{enumerate}
 \end{minipage}\hfill
 \begin{minipage}{0.4\linewidth}
@@ -251,92 +256,80 @@ La idea es de cortar la matriz en bloques cuadrados, y de tratarla en un orden p
   \end{center}
 \end{minipage}
 ~\\\\\\
-\indent Este algoritmo es hecho para que sea cache-oblivious, de manera que un bloque sea del tamano del cache. En efecto, para calcular cada bloque, solo necesita de cargar 1 bloque en etapa 1, 2 bloques en etapa 2, y 3 bloques en etapa 3.
+\indent Cet algorithme est fait pour qu'il soit cache-oblivious, de manière à ce qu'un bloc soit de la taille du cache. En effet, pour calculer chaque bloc, cela nécessite de charger seulement 1 bloc en étape 1, 2 bloc en étape 2, et 3 blocs en étape 3.
 
-\subsection{Floyd-Warshall paralelo, con una matriz cortada en bloques cuadrados}
+\subsection{Floyd-Warshall parallèle, avec una matrice coupée en bloc carrés}
 
-\noindent Codigo de entrada : FW\_PAR\_TILED \\
-Codigo de salida : FWPTI (Floyd-Warshall parallel tiled-implemented)\\
+\noindent Code d'entrée : FW\_PAR\_TILED \\
+Code de sortie : FWPTI (Floyd-Warshall parallèle tiled-implemented)\\
 
-Es la version paralela del algoritmo anterior.
+C'est la version parallèle de l'algorithme précédent.
 
-\subsection{Floyd-Warshall secuencial, con una matriz cortada en bloques cuadrados, con una disposicion adaptada de la memoria}
+\subsection{Floyd-Warshall séquentiel, avec una matrice coupée en blocs carrés, avec une disposition adaptée de la mémoire}
 
-\noindent Codigo de entrada : FW\_SEQ\_TILED\_LAYOUT \\
-Codigo de salida : FWSTB (Floyd-Warshall secuencial tiled-bloc implemented)
+\noindent Code d'entrée : FW\_SEQ\_TILED\_LAYOUT \\
+Code de sortie : FWSTB (Floyd-Warshall séquentiel tiled-bloc implemented)
 
 \begin{center}
   \includegraphics[scale=0.5]{FW_SEQ_TILED_LAYOUT.png}
 \end{center}
 
-Es lo mismo algoritmo que antes, pero con una dispocision adaptada de la memoria, en bloques. Es lo que la linea 3 del algoritmo hace.
+C'est le même algorithme que précédemment, avec une disposition adaptée de la mémoire en blocs. C'est ce que la ligne 3 de l'algorithme fait.
 
-Asi se reduce el numero de fallas de cache.
+L'idée est de réduire énormément le nombre de défauts de cache.
 
-\subsection{Floyd-Warshall paralelo, con una matriz cortada en bloques cuadrados, con una disposicion adaptada de la memoria}
+\subsection{Floyd-Warshall parallèle, avec una matrice coupée en blocs carrés, avec une disposition adaptée de la mémoire}
 
-\noindent Codigo de entrada : FW\_PAR\_TILED\_LAYOUT \\
-Codigo de salida : FWPTB (Floyd-Warshall parallel tiled-bloc implemented)\\
+\noindent Code d'entrée : FW\_PAR\_TILED\_LAYOUT \\
+Code de sortie : FWPTB (Floyd-Warshall parallel tiled-bloc implemented)\\
 
-Es la version paralela del algoritmo anterior. Deberia estar el mejor algoritmo.
+C'est la version parallèle de l'algorithme précédent. Cela devrait être le meilleur algorithme. Les algorithmes précédents ont été réalisés pour introduire cet algorithme.
 
-\subsection{Floyd-Warshall secuencial, con una matriz en una dimensión}
+\subsection{Floyd-Warshall séquentiel, avec une matrice en une dimension}
 
-\noindent Codigo de entrada : FW\_SEQ\_1D \\
-Codigo de salida : FWS1D
+\noindent Code d'entrée : FW\_SEQ\_1D \\
+Code de sortie : FWS1D
 
 \begin{center}
   \includegraphics[scale=0.6]{FW_SEQ_1D.png}
 \end{center}
 
-Es el algoritmo basico (con las mejoracion de memorisacion y de saltar los infinitos), con una matriz en una dimensión.
-Se puede ver como un caso especial del algoritmo de antes, cuando hay solo un bloque.
+C'est l'algorithme basique, avec une représentation 1D de la matrice.
 
-\subsection{Floyd-Warshall paralelo, con una matriz en una dimensión}
+Il peut se voir comme un cas particulier de l'algorithme précédent, quand il n'y a qu'un seul bloc.
 
-\noindent Codigo de entrada : FW\_PAR\_1D \\
-Codigo de salida : FWP1D
+\subsection{Floyd-Warshall parallèle, avec una matrice en une dimension}
+
+\noindent Code d'entrée : FW\_PAR\_1D \\
+Code de sortie : FWP1D
 
 \begin{figure}[H]
 \begin{center}
   \includegraphics[scale=0.6]{FW_PAR_1D.png}
-  \caption{Algoritmo de Floyd-Warshall paralelo con una matriz 1D}
+  \caption{Algorithme de Floyd-Warshall parallèle avec une matrice 1D}
 \end{center}
 \end{figure}
 
-Es la version paralela del algoritmo anterior.
+La version parallèle de l'algorithme précédent.
 
-\subsection{Dijkstra secuencial}
+\section{Garantie de l'exactitude des sorties}
+\subsection{Vérité Terrain}
 
-\noindent Codigo de entrada : DIJK\_SEQ \\
-Codigo de salida : DIJK\_SEQ
+J'ai commencé par vérifier les sorties de l'algorithme basique, qui peuvent être supposées correctes pour tout graphe si elles sont correctes sur les graphes basiques, étant donné que le code de l'algorithme est classique et se trouve facilement sur internet.
 
-\begin{figure}[H]
-\begin{center}
-  \includegraphics[scale=0.6]{DIJK.png}
-  \caption{Algoritmo basico de Dijkstra}
-\end{center}
-\end{figure}
+Le script Python \textbf{Verify\_Output.py} permet en effet de vérifier que les sorties pour les graphes basiques sont les mêmes que celles de la vérité terrain du dossier Ground\_Truth.
 
-Es el algoritmo basico de Dijkstra, que a la diferencia de Floyd-Warshall calcula la distancia minima solo para ir de un vertice a un otro.
+Pour vérifier les sorties basiques également, le script \textbf{Graph\_Generator.py} permet de générer des représentations visuelles de graphes, comme celui de la figure 2. Il a un intérêt que pour les graphes basiques.
 
-\section{Aseguramiento de exactitud de las salidas}
-\subsection{''Realidad del terreno''}
+\subsection{Script de comparaison des sorties}
 
-Al principio, testé la exactitud de las salidas del algoritmo basicó. Como el codigo del algoritmo es bastante facil y se puede encontrar sobre el internet, solo testé sobre los grafos basicos.
-
-El script Python \textbf{Verify\_Output.py} permite de verificar que las salidas para los grafos basicos estan los mismos que los que se encontran en la carpeta Ground\_Truth, que estan hecho de mano.
-
-Tambien para verificarlos, el script \textbf{Graph\_Generator.py} permite de generar grafos como el de la figura 2. Functiona solamento para los grafos basicos.
-
-\subsection{Script de comparación de la salidas}
-
-Después de usar la opción -d del main (para escribir las salidas de los diferentes algoritmos en archivas), se puede comparar las salidas de cada algoritmo.
+Après l'utilisation de l'option -d du main (pour écrire les sorties des algorithmes dans des fichiers), il est possible de comparer les sorties de chaque algorithme.
 
 \begin{minipage}{0.35\linewidth}
-El script al lado hace la diferencia entre las archivas, para ver si los algoritmos producen todos la misma salida.\\
+Le script à côté permet de faire des différences entre les fichiers de sortie du -d, pour vérifier que les algorithmes produisent bien la même sortie.\\
 
-Si todos los algoritmos producen la misma salida que el algoritmo basicó, consideramos que los algoritmos estan exactos, aunque puede haber diferentes casos límite, que no estan interesantes.
+Si tous les algorithmes produisent la même sortie que l'algorithme basique, on suppose qu'ils sont exactes, même s'il peut y avoir des différences sur des cas limites, qui ne nous intéressent pas particulièrement dans ce projet.
+
 \end{minipage}\hfill
 \begin{minipage}{0.65\linewidth}
   \begin{center}
@@ -344,218 +337,220 @@ Si todos los algoritmos producen la misma salida que el algoritmo basicó, consi
   \end{center}
 \end{minipage}
 
-\section{Comparación de desempeño}
+\section{Comparatif de performances}
 
-Los grafos simples solo se utilizaron para probar los algoritmos, vamos a utilizar los otros para comparar los desempenos.
+Les comparatifs se font sur les graphes de taille au moins moyenne.
 
-La configuracion utilizada es :
+La configuration utilisée est la suivante :
 
 \begin{itemize}
-  \item Processor : Intel(R) Core(TM) i5-3210M CPU @ 2.50GHz
+  \item Processeur : Intel(R) Core(TM) i5-3210M CPU @ 2.50GHz
   \item 4 threads
-  \item Tamano de cache : 3072 KB
-  \item Compilador : gcc 6.2
-  \item Optimizacion : O3
+  \item Taille de cache : 3072 KB
+  \item Compilateur : gcc 6.2
+  \item Optimisation : O3
 \end{itemize}
 
-\subsection{Grafos medios}
+\subsection{Graphes moyens}
 
 \begin{center}
   \begin{tabular}{p{2cm} | p{4.5cm} | p{2cm} | p{3cm} | p{3cm}}
-    \centering \textbf{Algoritmo} & \centering \textbf {Veces mejor que el algo basico} & \centering \textbf{Tiempo total} & \centering \textbf{Mejor caso} & \centering \textbf{Peor caso} \tabularnewline
+    \centering \textbf{Algorithme} & \centering \textbf {Performances meilleures que l'algo basique} & \centering \textbf{Temps total} & \centering \textbf{Meilleur cas} & \centering \textbf{Pire cas} \tabularnewline
     \hline
     FWSeq & & 6.41 & & \\
     \hline
     \hline
-    FWSqM & 29 & 6.24 & 118\% mejor & 0\%, igual \\
+    FWSqM & 29 & 6.24 & 118\% meilleur & 0\%, égual \\
     \hline
-    FWSTB & 15 & 5.33 & 2308\% mejor & 68\% peor \\
+    FWSTB & 15 & 5.33 & 2308\% meilleur & 68\% pire \\
     \hline
-    FWSTI & 23 & 2.95 & 4433\% mejor & 64\% peor \\
+    FWSTI & 23 & 2.95 & 4433\% meilleur & 64\% pire \\
     \hline
-    FWP1C & 28 & 2.95 & 3640\% mejor & 38\% peor \\
+    FWP1C & 28 & 2.95 & 3640\% meilleur & 38\% pire \\
     \hline
-    FWP1L & 30 & 2.80 & 4084\% mejor & 16\% mejor \\
+    FWP1L & 30 & 2.80 & 4084\% meilleur & 16\% meilleur \\
     \hline
-    FWS1D & 23 & 2.66 & 3913\% mejor & 63\% peor \\
+    FWS1D & 23 & 2.66 & 3913\% meilleur & 63\% pire \\
     \hline
-    FWSMS & 30 & 2.48 & 17600\% mejor & 17\% mejor \\
+    FWSMS & 30 & 2.48 & 17600\% meilleur & 17\% meilleur \\
     \hline
-    FWPTB & 30 & 2.32 & 3379\% mejor & 6\% mejor \\
+    FWPTB & 30 & 2.32 & 3379\% meilleur & 6\% meilleur \\
     \hline
-    FWPTI & 29 & 1.39 & 5745\% mejor & 60\% peor \\
+    FWPTI & 29 & 1.39 & 5745\% meilleur & 60\% pire \\
     \hline
-    FWP1D & 30 & 1.25 & 6946\% mejor & 100\% mejor \\
+    FWP1D & 30 & 1.25 & 6946\% meilleur & 100\% meilleur \\
     \hline
   \end{tabular}
 \end{center}
 
-\subsection{Grafos complejos}
+\subsection{Graphes complexes}
 
 \begin{center}
   \begin{tabular}{p{2cm} | p{4.5cm} | p{2cm} | p{3cm} | p{3cm}}
-    \centering \textbf{Algoritmo} & \centering \textbf {Veces mejor que el algo basico} & \centering \textbf{Tiempo total} & \centering \textbf{Mejor caso} & \centering \textbf{Peor caso} \tabularnewline
+    \centering \textbf{Algorithme} & \centering \textbf {Performances meilleures que l'algo basique} & \centering \textbf{Temps total} & \centering \textbf{Meilleur cas} & \centering \textbf{Pire cas} \tabularnewline
     \hline
     FWSeq & & 94.24 & & \\
     \hline
     \hline
-    FWSqM & 25 & 93.97 & 2\% mejor & 7\% peor \\
+    FWSqM & 25 & 93.97 & 2\% meilleur & 7\% pire \\
     \hline
-    FWSTB & 16 & 74.94 & 4671\% mejor & 47\% peor \\
+    FWSTB & 16 & 74.94 & 4671\% meilleur & 47\% pire \\
     \hline
-    FWP1C & 30 & 60.23 & 747\% mejor & 1\% mejor \\
+    FWP1C & 30 & 60.23 & 747\% meilleur & 1\% meilleur \\
     \hline
-    FWP1L & 30 & 49.36 & 3891\% mejor & 11\% mejor \\
+    FWP1L & 30 & 49.36 & 3891\% meilleur & 11\% meilleur \\
     \hline
-    FWSTI & 30 & 44.19 & 6010\% mejor & 12\% mejor \\
+    FWSTI & 30 & 44.19 & 6010\% meilleur & 12\% meilleur \\
     \hline
-    FWSMS & 30 & 38.79 & 11861\% mejor & 24\% mejor \\
+    FWSMS & 30 & 38.79 & 11861\% meilleur & 24\% meilleur \\
     \hline
-    FWS1D & 30 & 38.69 & 6952\% mejor & 24\% mejor \\
+    FWS1D & 30 & 38.69 & 6952\% meilleur & 24\% meilleur \\
     \hline
-    FWPTB & 30 & 28.76 & 6318\% mejor & 57\% mejor \\
+    FWPTB & 30 & 28.76 & 6318\% meilleur & 57\% meilleur \\
     \hline
-    FWPTI & 30 & 20.88 & 7547\% mejor & 100\% mejor \\
+    FWPTI & 30 & 20.88 & 7547\% meilleur & 100\% meilleur \\
     \hline
-    FWP1D & 30 & 17.73 & 11506\% mejor & 100\% mejor \\
+    FWP1D & 30 & 17.73 & 11506\% meilleur & 100\% meilleur \\
     \hline
   \end{tabular}
 \end{center}
 
-\subsection{Grafos re complejos}
+\subsection{Graphes très complexes}
 
 \begin{center}
   \begin{tabular}{p{2cm} | p{4.5cm} | p{2cm} | p{3cm} | p{3cm}}
-    \centering \textbf{Algoritmo} & \centering \textbf {Veces mejor que el algo basico} & \centering \textbf{Tiempo total} & \centering \textbf{Mejor caso} & \centering \textbf{Peor caso} \tabularnewline
+    \centering \textbf{Algorithme} & \centering \textbf {Performances meilleures que l'algo basique} & \centering \textbf{Temps total} & \centering \textbf{Meilleur cas} & \centering \textbf{Pire cas} \tabularnewline
     \hline
     FWSeq & & 1007 & & \\
     \hline
     \hline
-    FWSTB & 2 & 1535 & 263\% mejor & 54\% peor \\
+    FWSTB & 2 & 1535 & 263\% meilleur & 54\% pire \\
     \hline
-    FWP1C & 7 & 1243 & 33\% mejor & 37\% peor \\
+    FWP1C & 7 & 1243 & 33\% meilleur & 37\% pire \\
     \hline
-    FWSqM & 20 & 1016 & 3\% mejor & 8\% peor \\
+    FWSqM & 20 & 1016 & 3\% meilleur & 8\% pire \\
     \hline
-    FWP1L & 13 & 1006 & 107\% mejor & 30\% peor \\
+    FWP1L & 13 & 1006 & 107\% meilleur & 30\% pire \\
     \hline
-    FWSTI & 30 & 729 & 232\% mejor & 6\% mejor \\
+    FWSTI & 30 & 729 & 232\% meilleur & 6\% meilleur \\
     \hline
-    FWSMS & 30 & 706 & 215\% mejor & 11\% mejor \\
+    FWSMS & 30 & 706 & 215\% meilleur & 11\% meilleur \\
     \hline
-    FWS1D & 30 & 694 & 263\% mejor & 12\% mejor \\
+    FWS1D & 30 & 694 & 263\% meilleur & 12\% meilleur \\
     \hline
-    FWPTB & 29 & 589 & 641\% mejor & 9\% mejor \\
+    FWPTB & 29 & 589 & 641\% meilleur & 9\% meilleur \\
     \hline
-    FWPTI & 30 & 365 & 585\% mejor & 36\% mejor \\
+    FWPTI & 30 & 365 & 585\% meilleur & 36\% meilleur \\
     \hline
-    FWP1D & 30 & 335 & 647\% mejor & 100\% mejor \\
+    FWP1D & 30 & 335 & 647\% meilleur & 100\% meilleur \\
     \hline
   \end{tabular}
 \end{center}
 
-\subsection{Analisis}
+\subsection{Analyse}
 
-\indent Este parte es solamente relativa a mi maquina. Los resultados pueden ser muy diferentes sobre maquinas mas poderosas, por eso el manual del usario en parte 2 permite de hacer tests de desempeño sobre otras maquinas.
+\indent Cette partie est relativement uniquement à ma machine. Les résultats peuvent être très différents sur des machines plus puissantes.
 
-Podemos ver que el algoritmo paralelo con la matriz en una dimensión es el mejor. 
+L'algorithme parallèle avec la matrice en une dimension (et les deux optimisations basiques de mémoïzation et sauts d'infinis) est le meilleur.
 
-Es un caso especial del algoritmo en bloques, que teoricamente deberia estar mejor. Ademas el algoritmo FWPTI, que es el FWPTB sin cambiar la representacion en memoria de la matriz, tiene mejor desempeno. Eso es extrano porque normalmente el cambio de la representacion en memoria es hecho para reducir las fallas de cache, y con gprof se puede ver que las funciones para cambiar la representacion de la matriz no toman mucho tiempo, la diferencia no se puede explicar de ese manera.
+C'est un cas particulier de l'algorithme en blocs, qui devrait théoriquement être meilleur. Par ailleurs l'algorithme FWPTI, qui est un FWPTB sans changer la représentation en mémoire de la matrice, fournit de meilleurs résultats. C'est un résultat étranger étant donné que l'algorithme est conçu pour utiliser une représentation spatiale différente des données, de plus, avec gprof il est possible de voir que les fonctions qui changent la représentation de la matrice en mémoire ne prennent pas énormément de temps.
 
-Tambien podemos ver que el algoritmo basico con memorisacion tiene casi el mismo desempeno que el algoritmo basico. Eso se explica con el O3 de gcc 6.2. En efecto trabajé casi todo el tiempo con gcc 4.8.4 y el O3, y con eso este algoritmo fue mucho mejor en comparison con el algoritmo basico con gcc 4.8.4 O3.
+J'imagine que plus les graphes sont grands, plus l'écart de performance se réduit entre FWPTB et FWP1D. De plus il est raisonnable d'imaginer que le FWPTB possède des meilleurs performances avec un cache plus grand.
 
-Entonces se puede deducir que el O3 ahora es suficiente inteligente para hacer la memorisacion solo.
+Nous pouvons également voir que l'algorithme basique avec mémoïzation possède environ les mêmes performances que l'algorithme basique. Cela s'explique par le O3 de gcc 6.2. En effet j'ai travaillé quasiment tout le temps avec le O3 de gcc 4.8.4, pour lequel la mémoïzation est un grand gain de temps.
 
-De otro lado, los resultados de mejor caso se pueden explicar con los saltos de las valores infinitas. Los 30 grafos fueron hecho de manera aleatoria, entonces si hay una proporcion muy importante de aristas infinitas, el algoritmo basico va a estar peor en comparison. Por eso aunque E no influye la complejidad, influye el desempeño.
+On peut en conclure que le O3 est devenu suffisamment intelligent pour gérer seul la mémoïzation.
 
-Ademas,  el algoritmo FWP1L es mejor que el algoritmo FWP1C, porque las lineas de la matriz son localizadas en la memoria (aun con std::vector). Pero no estan buenos, porque estan peor que el algoritmo FWSMS mientras que usan las mismas metodas.
+D'autre part, les résultats au meilleur cas peuvent s'expliquer avec les sauts de valeurs infinis. Les 30 graphes étant générés de manière aléatoire, s'il y a très peu d'arêtes en proportion (des arêtes infinies donc), les performances seront excellentes. Ainsi E n'influe pas la complexité mais influence les performances.
 
-\section{Analisis comparativa de los algoritmos mas interesantes, sobre grafos de referencia}
+De plus, l'algorithme FWP1L est meilleur que l'algorithme FWP1C, car les lignes de la matrice sont localizées dans la mémoire (même avec std::vector, qui utilise la même représentation spatiale que des tableaux 2D). Ils sont cependant plutôt mauvais, car possèdent des pires performances que le FWSMS en utilisant les mêmes méthodes.
 
-En las tablas por debajo se pueden encontrar los tiempos de calcul de los algoritmos mas interesantes, expresados en segundos.
+\section{Analyse comparative synthétique des principaux algorithmes}
 
-\subsection{Con O3}
+Voici les temps de calcul des principaux algorithmes, exprimés en secondes, sur des graphes de référence.
+
+\subsection{Avec O3}
 
 \begin{center}
   \begin{tabular}{p{3.5cm} | p{1.6cm} | p{1.6cm} | p{1.8cm} | p{1.8cm} | p{1.8cm} | p{1.8cm}}
-    \textbf{Algoritmo} &  \textbf{V = 400} &  \textbf{V = 800} &  \textbf{V = 1200} &  \textbf{V = 1600} &  \textbf{V = 2000} &  \textbf{V = 3200} \\
+    \textbf{Algorithme} &  \textbf{V = 400} &  \textbf{V = 800} &  \textbf{V = 1200} &  \textbf{V = 1600} &  \textbf{V = 2000} &  \textbf{V = 3200} \\
     \hline
-    Basico & 0.062 & 0.40 & 1.32 & 3.15 & 6.12 & 24.36 \\
+    Basique & 0.062 & 0.40 & 1.32 & 3.15 & 6.12 & 24.36 \\
     \hline
-    Basico con memorisacion & 0.059 & 0.40 & 1.31 & 3.16 & 6.11 & 24.38 \\
+    Basique avec mémoïzation & 0.059 & 0.40 & 1.31 & 3.16 & 6.11 & 24.38 \\
     \hline
-    Basico con memorisacion y saltos de infinitas & 0.051 & 0.30 & 0.77 & 1.33 & 1.96 & 10.37 \\
+    Basique avec mémoïzation et sauts d'infinis & 0.051 & 0.30 & 0.77 & 1.33 & 1.96 & 10.37 \\
     \hline
-    secuencial 1d & 0.069 & 0.33 & 0.81 & 1.41 & 2.02 & 10.54 \\
+    Séquentiel 1d & 0.069 & 0.33 & 0.81 & 1.41 & 2.02 & 10.54 \\
     \hline
-    Paralelo 1d 2 threads & 0.039 & 0.18 & 0.45 & 0.75 & 1.09 & 5.67 \\
+    Parallèle 1d 2 threads & 0.039 & 0.18 & 0.45 & 0.75 & 1.09 & 5.67 \\
     \hline
-    Paralelo 1d 4 threads & 0.032 & 0.15 & 0.39 & 0.64 & 0.95 & 5.08 \\
+    Parallèle 1d 4 threads & 0.032 & 0.15 & 0.39 & 0.64 & 0.95 & 5.08 \\
     \hline
   \end{tabular}
 \end{center}
 
-\subsection{Sin O3}
+\subsection{Sans O3}
 
 \begin{center}
   \begin{tabular}{p{3.5cm} | p{1.6cm} | p{1.6cm} | p{1.8cm} | p{1.8cm} | p{1.8cm} | p{1.8cm}}
-    \textbf{Algoritmo} &  \textbf{V = 400} &  \textbf{V = 800} &  \textbf{V = 1200} &  \textbf{V = 1600} &  \textbf{V = 2000} &  \textbf{V = 3200} \\
+    \textbf{Algorithme} &  \textbf{V = 400} &  \textbf{V = 800} &  \textbf{V = 1200} &  \textbf{V = 1600} &  \textbf{V = 2000} &  \textbf{V = 3200} \\
     \hline
-    Basico & 1.03 & 8.08 & 27.1 & 64.29 & 125.9 & 514 \\
+    Basique & 1.03 & 8.08 & 27.1 & 64.29 & 125.9 & 514 \\
     \hline
-    Basico con memorisacion & 0.73 & 5.76 & 19.28 & 45.65 & 89.1 & 352 \\
+    Basique avec mémoïzation & 0.73 & 5.76 & 19.28 & 45.65 & 89.1 & 352 \\
     \hline
-    Basico con memorisacion y saltos de infinitas & 0.63 & 4.03 & 10.47 & 17.35 & 25.3 & 145 \\
+    Basique avec mémoïzation et sauts d'infinis & 0.63 & 4.03 & 10.47 & 17.35 & 25.3 & 145 \\
     \hline
-    Secuencial 1d & 0.42 & 2.64 & 6.86 & 11.37 & 16.6 & 94 \\
+    Séquentiel 1d & 0.42 & 2.64 & 6.86 & 11.37 & 16.6 & 94 \\
     \hline
-    Paralelo 1d 2 threads & 0.40 & 1.57 & 4.13 & 6.93 & 11.73 & 56 \\
+    Parallèle 1d 2 threads & 0.40 & 1.57 & 4.13 & 6.93 & 11.73 & 56 \\
     \hline
-    Paralelo 1d 4 threads & 0.23 & 1.46 & 3.75 & 6.25 & 9.91 & 52 \\
+    Parallèle 1d 4 threads & 0.23 & 1.46 & 3.75 & 6.25 & 9.91 & 52 \\
     \hline
   \end{tabular}
 \end{center}
 
-\section{Explicacion de los resultados}
-\subsection{La importancia de la gestion del cache en linea}
+\section{Explication des résultats}
+\subsection{L'importance de la gestion du cache en ligne}
 
-En c++ la memoria es organizada en lineas, entonces es mucho mas rapido de examinar una tabla linea per linea que columna per columna. Se puede ver aqui por ejemplo :
+En C++ la mémoire des tableaux 2D est organisée en lignes, d'où le résultat suivant :
 
 \begin{center}
   \includegraphics[scale=0.6]{Cache_Importance.png}
 \end{center}
 
-Para explicarlo, nos interemos a la ultima boucla for en cada caso.\\
+Pour expliquer cela, on s'intéresse à la dernière boucle dans chaque cas.\\
 
-En el primer caso, graph[i][k] es una constante en la boucla, solamente graph[i][j] y graph[k][j] depienden de la variable de la boucla. Por eso, para cargar todas las valores de la boucla, solo hay que cargra las lineas i y k de la matriz.\\
+Dans le premier cas, graph[i][j] est une constante de la boucle, seulement graph[i][j] et graph[k][j] dépendent de la variable de la boucle. Ainsi, pour charger toutes les valeurs de la boucle, il n'y a qu'à charger les lignes i et k de la matrice.\\
 
-En el secondo caso, son graph[i][j] y graph[i][k] que depienden de la variable de la boucla. Pero por cada valor de i, hay que cargar en la memoria una nueva linea de la matriz.
+Dans le second cas, graph[i][j] et graph[i][k] dépendent de la variable de la boucle. Mais pour chaque valeur de i, il faut charger en mémoire une nouvelle ligne de la matrice.
 
-\noindent Eso genera muchas fallas de cache, y explica porque el segundo caso es mucho mas lento que el primero.
+\noindent Cela génère beaucoup d'erreurs de cache, et explique pourquoi le second cas est beaucoup plus lent que le premier.
 
-\subsection{La importancia de la ubicación espacial en la memoria}
+\subsection{L'importance de la représentation spatiale de la mémoire}
 
-Este parte sirve a explicar porque el algoritmo con la matriz en una dimensión es el mejor.
+Cette partie essaie d'expliquer pourquoi l'algorithme avec la matrice en une dimension est le meilleur.
 
-Como el tamaño de la matriz de distancias es conocido que durante la ejecución, las tablas estan dinamicas.
+Comme la taille de la matrice des distances est connue à l'exécution, les tableaux sont dynamiques.
 
-Por eso usé vectores de vectores. Functionan como una tabla 2D en C, con punteros de punteros.
+C'est pour cela que j'ai utilisé des vecteurs de vecteurs. Ils fonctionnent comme un tableau 2D en C, avec des pointeurs de pointeurs.
 
-Pero cuando la matriz no esta en una dimensión, la localidad espacial en la memoria se pierde, porque cada linea puede ser lejos de una linea consecutiva.
+Lorsque que la matrice n'est pas en une dimension, la localisation spatiale en mémoire se perd, car chaque ligne peut être loin de la ligne suivante.
 
-\section{Possibilidades de mejoracion}
+\section{Possibilités d'amélioration}
 
-La primera cosa a hacer es de testear los desempeños sobre una maquina mas poderosa. El mejor algoritmo deberia ser el FWPTB, con un tamaño de bloque que esta del tamaño del cache. El script Python \textbf{generate\_blocsize\_analysis.py} puede testear diferentes tamaños de bloques. Se llama desde la carpeta primaria.
+La première chose à faire est de tester les performances sur une machine plus puissante. Le meilleur algorithme devrait être le FWPTB, avec une taille de bloc égal à la taille du cache. Le script Python \textbf{generate\_blocsize\_analysis.py} peut tester différentes tailles de blocs. Il s'appelle depuis le dossier principal.
 
-De otra parte, es posible de implementar el algoritmo de Floyd-Warshall de manera recursiva, con el Z-Morton layout.
+D'autre part, il est possible d'implémenter l'algorithme de Floyd-Warshall de manière récursive, avec la représentation en mémoire Z-Morton.
 
-\section{Bibliografia}
+\section{Bibliographie}
 
-Tutorial OpenMP :
+Tutoriel OpenMP :
 
 https://computing.llnl.gov/tutorials/openMP/\\
 
-\noindent Algoritmo de Floyd-Warshall :
+\noindent Algorithme de Floyd-Warshall :
 
 https://www.cs.usfca.edu/galles/visualization/Floyd.html
 
@@ -587,7 +582,7 @@ https://www.google.com.ar/url?sa=t\&rct=j\&q=\&esrc=s\&source=web\&cd=1\&ved=0ah
 https://en.wikipedia.org/wiki/Z-order\_curve\\
 
 
-\noindent Cache defaults :
+\noindent Défauts de cache :
 
 http://valgrind.org/docs/manual/cg-manual.html
 

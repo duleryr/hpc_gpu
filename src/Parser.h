@@ -11,7 +11,6 @@
 # include <vector>
 # include <limits>
 # include <string>
-# include "Edge.h"
 
 #define infinity std::numeric_limits<unsigned short>::max()
 
@@ -44,30 +43,6 @@ public:
 
 		ifile.close();
 		return adjacency_matrix;
-	}
-
-	static std::vector<std::vector<Edge>> get_edge_representation(std::string filename) {
-		// number of vertices and edges
-		unsigned short V, E;
-		unsigned short from, to, cost;
-		std::ifstream ifile(filename, std::ios::in);
-
-		if (!ifile) {
-			std::cerr << "Impossible d'ouvrir le fichier" << std::endl;
-			exit(0);
-		}
-		ifile >> V >> E;
-		std::vector<std::vector<Edge>> vertex_matrix(V);
-
-		// Read edges from input file
-		for (unsigned short i = 0; i < E; i++)
-		{
-			ifile >> from >> to >> cost;
-			vertex_matrix[from].push_back(Edge(to, cost));
-		}
-
-		ifile.close();
-		return vertex_matrix;
 	}
 };
 
