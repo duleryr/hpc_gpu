@@ -5,6 +5,7 @@
 \usepackage[french]{babel}
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{url}
 \usepackage[T1]{fontenc}
 \graphicspath{{images/}}
 
@@ -202,7 +203,10 @@ Chaque algorithme qui suit utilisera les deux techniques de mémoïzation et sau
 \subsection{Floyd-Warshall parallélizé sur les lignes}
 
 \noindent Code d'entrée : FW\_PAR1\_L \\
-Code de sortie : FWP1L
+Code de sortie : FWP1L\\
+
+L'algorithme se parallélize facilement car ne possède pas de dépendance temporelle et spatiale contraignante.\\
+On peut alors simplement le parallélizer selon les lignes.\\
 
 \begin{figure}[H]
 \begin{center}
@@ -546,7 +550,7 @@ D'autre part, il est possible d'implémenter l'algorithme de Floyd-Warshall de m
 
 \section{Bibliographie}
 
-Tutoriel OpenMP :
+\noindent Tutoriel OpenMP :
 
 https://computing.llnl.gov/tutorials/openMP/\\
 
@@ -573,8 +577,6 @@ http://moais.imag.fr/membres/marc.tchiboukdjian/pub/thesis.pdf
 http://escholarship.org/uc/item/9v89p5wv\#page-10
 
 http://repository.upenn.edu/cgi/viewcontent.cgi?article=1213\&context=hms
-
-https://www.google.com.ar/url?sa=t\&rct=j\&q=\&esrc=s\&source=web\&cd=1\&ved=0ahUKEwjUpeKBxO\_PAhWIH5AKHb2zBLcQFggcMAA\&url=http\%3A\%2F\%2Fwww.cs.technion.ac.il\%2Fitai\%2FCourses\%2FCache\%2FPresentations\%2Foptimizing-gr-algs.ppt\&usg=AFQjCNEidlujtiLvwSzdGqEQ56XNeDyrKA\&cad=rja\\
 
 
 \noindent Z-Morton order :
