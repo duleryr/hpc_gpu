@@ -676,10 +676,10 @@ std::vector<std::vector<unsigned short>> floyd_warshall_GPU(std::vector<std::vec
         }
     }
 
-    for (i = 0; i < V*V; i++) {
-	std::cout << h_graph[i] << " ";
-    }
-    std::cout << std::endl;
+    //for (i = 0; i < V*V; i++) {
+    //    std::cout << h_graph[i] << " ";
+    //}
+    //std::cout << std::endl;
 
     // OpenCL part
     util::Timer timer;
@@ -701,7 +701,6 @@ std::vector<std::vector<unsigned short>> floyd_warshall_GPU(std::vector<std::vec
     d_graph = cl::Buffer(context, std::begin(h_graph), std::end(h_graph), true);
 
     for (k = 0; k < V; k++) {
-    //for (k = 0; k < 1; k++) {
 	floyd_cl(
 		cl::EnqueueArgs(
 		    queue,
@@ -709,7 +708,6 @@ std::vector<std::vector<unsigned short>> floyd_warshall_GPU(std::vector<std::vec
 		d_graph,
 		V,
 		k);
-
 	queue.finish();
     }
 
