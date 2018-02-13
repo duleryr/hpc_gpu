@@ -706,11 +706,13 @@ std::vector<std::vector<unsigned short>> floyd_warshall_GPU(std::vector<std::vec
     cl::copy(queue, d_graph, std::begin(h_graph), std::end(h_graph));
 
     std::vector<std::vector<unsigned short>> output_matrix(V, std::vector<unsigned short>(V));
-#if DEBUG_GPU
     for (i = 0; i < V*V; i++) {
         output_matrix[i / V][i % V] = h_graph[i];
+#if DEBUG_GPU
 	std::cout << h_graph[i] << " ";
+#endif
     }
+#if DEBUG_GPU
     std::cout << std::endl;
 #endif
 

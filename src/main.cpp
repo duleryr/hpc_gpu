@@ -344,7 +344,7 @@ int main(int argc, char** argv)
             BlockTimerPar time_par;
             distance_matrix = floyd_warshall_GPU(adjacency_matrix);
 
-            time_par.display(*stream, "FWGPU", "Floyd_Warshall parallel GPU implemented", numThreads);
+            time_par.display(*stream, "FWGPU", "Floyd_Warshall parallel GPU implemented", 0);
 
             if (tolower(saveInFile[0]) == 'y')
                 save_in_file(distance_matrix, filename, "FW_gpu");
