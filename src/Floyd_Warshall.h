@@ -49,4 +49,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_par_tiled_layout_memPos(
 // Parallel Floyd_Warshall algorithm with num_threads > num_nodes
 std::vector<std::vector<unsigned short>> floyd_warshall_par2(std::vector<std::vector<unsigned short>> graph);
 
+// parallel implementation of Floyd_Marshall algorithm, with a 1 dimension matrix with OpenCL
+std::vector<std::vector<unsigned short>> floyd_warshall_GPU(std::vector<std::vector<unsigned short>> adjacency_matrix);
+
 #endif

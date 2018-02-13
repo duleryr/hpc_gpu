@@ -1,21 +1,30 @@
 PROG = main
 CXX=g++
 CXXFLAGS=-Wall -Wextra -std=c++11 -fopenmp
+CXX_COMMON= CXX_common
+CXXFLAGS += -D DEVICE=$(DEVICE)
+
+ifndef DEVICE
+	DEVICE = CL_DEVICE_TYPE_DEFAULT
+endif
+
+INC = -I $(CXX_COMMON)
 
 SRCDIR=./src
 TESTDIR=./Unit_Tests
 CSOURCE=$(SRCDIR)/Floyd_Warshall.cpp
 CSMAIN=$(SRCDIR)/main.cpp
 CSTEST=$(TESTDIR)/bloc_layout.cpp
+LIBS = -lOpenCL -lrt -lstdc++
 
 $(PROG): 
-	$(CXX) $(CSOURCE) $(CXXFLAGS) -O3 $(CSMAIN) -o $@ 
+	$(CXX) $(CSOURCE) $(INC) $(CXXFLAGS) $(LIBS) -O3 $(CSMAIN) -o $@ 
 	
 sinopti:
-	$(CXX) $(CSOURCE) $(CXXFLAGS) $(CSMAIN) -o $@ 
+	$(CXX) $(CSOURCE) $(INC) $(CXXFLAGS) $(LIBS) $(CSMAIN) -o $@ 
 
 debug:
-	$(CXX) $(CSOURCE) $(CXXFLAGS) -g -pg $(CSMAIN) -o $@ 
+	$(CXX) $(CSOURCE) $(INC) $(CXXFLAGS) -g -pg $(CSMAIN) -o $@ 
 	
 test:
 	$(CXX) $(CSTEST) $(CXXFLAGS) -o $@ 
@@ -23,7 +32,8 @@ test:
 doc:
 	pdflatex -output-directory=Documentation/ Documentation/Presentacion_proyecto.tex
 
-all: $(PROG) debug test doc sinopti
+all: $(PROG) test doc sinopti
+#all: $(PROG) debug test doc sinopti
 
 clean :
 	rm -f ./main

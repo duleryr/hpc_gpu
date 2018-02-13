@@ -4,9 +4,13 @@
 # include <vector>
 # include <limits>
 # include <omp.h>
+# include <cstdlib>
+# include <chrono>
 
 #include "Floyd_Warshall.h"
 #include "Bloc_Layout.h"
+#include "cl.hpp"
+#include "util.hpp"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 // Definition of infinity in order to be able to sum 2 infinites without having to define a new class Infinity
@@ -626,6 +630,11 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_1d(std::vector<std::
         }
     }
 
+    for (i = 0; i < V*V; i++) {
+	std::cout << graph[i] << " ";
+    }
+    std::cout << std::endl;
+
     for (k = 0; k < V; k++) {
         // Bloc (k,k)
         for (i = 0; i < V; i++) {
@@ -639,6 +648,12 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_1d(std::vector<std::
                 }
             }
         }
+
+	std::cout << "k = " << k << std::endl;
+	for (i = 0; i < V*V; i++) {
+	    std::cout << graph[i] << " ";
+	}
+	std::cout << std::endl;
     }
 
     std::vector<std::vector<unsigned short>> output_matrix(V, std::vector<unsigned short>(V));
@@ -646,10 +661,72 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_1d(std::vector<std::
         output_matrix[i / V][i % V] = graph[i];
     }
 
+    std::cout << std::endl;
     return output_matrix;
 }
 
-// Tiled parallel implementation of Floyd_Warshall algorithm, with a 1 dimension matrix
+// parallel implementation of Floyd_Marshall algorithm, with a 1 dimension matrix with OpenCL
+std::vector<std::vector<unsigned short>> floyd_warshall_GPU(std::vector<std::vector<unsigned short>> adjacency_matrix) {
+    int V = adjacency_matrix[0].size();
+    std::vector<unsigned short> h_graph(V*V);
+    int i, j, k;
+    for (i = 0; i < V; i++) {
+        for (j = 0; j < V; j++) {
+            h_graph[i * V + j] = adjacency_matrix[i][j];
+        }
+    }
+
+    for (i = 0; i < V*V; i++) {
+	std::cout << h_graph[i] << " ";
+    }
+    std::cout << std::endl;
+
+    // OpenCL part
+    util::Timer timer;
+    auto begin = std::chrono::high_resolution_clock::now();
+
+    std::string kernel_program(util::loadProgram("src/floyd_warshall.cl"));
+    // Create a context
+    cl::Context context(DEVICE);
+    // Load in kernel source, creating a program object for the context
+    cl::Program program(context,kernel_program,true);
+    // Get the command queue
+    cl::CommandQueue queue(context);
+    // Create the kernel functor
+    auto floyd_cl = cl::make_kernel<cl::Buffer, 
+	  int, int>(program, "floyd_warshall");
+
+    cl::Buffer d_graph;
+
+    d_graph = cl::Buffer(context, std::begin(h_graph), std::end(h_graph), true);
+
+    for (k = 0; k < V; k++) {
+    //for (k = 0; k < 1; k++) {
+	floyd_cl(
+		cl::EnqueueArgs(
+		    queue,
+		    cl::NDRange(V*V)),
+		d_graph,
+		V,
+		k);
+
+	queue.finish();
+    }
+
+    cl::copy(queue, d_graph, std::begin(h_graph), std::end(h_graph));
+
+    std::vector<std::vector<unsigned short>> output_matrix(V, std::vector<unsigned short>(V));
+    for (i = 0; i < V*V; i++) {
+        output_matrix[i / V][i % V] = h_graph[i];
+	std::cout << h_graph[i] << " ";
+    }
+    std::cout << std::endl;
+
+    return output_matrix;
+}
+
+
+// parallel implementation of Floyd_Marshall algorithm, with a 1 dimension matrix
 std::vector<std::vector<unsigned short>> floyd_warshall_par_1d(std::vector<std::vector<unsigned short>> adjacency_matrix, int numThreads) {
     int V = adjacency_matrix[0].size();
     std::vector<unsigned short> graph(V*V);
