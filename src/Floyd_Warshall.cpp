@@ -89,7 +89,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_mem_skip(std::vector
     return graph;
 }
 
-// Strip-mined 1D columns version of Floyd_Marshall algorithm
+// Strip-mined 1D columns version of Floyd_Warshall algorithm
 std::vector<std::vector<unsigned short>> floyd_warshall_par1_c(std::vector<std::vector<unsigned short>> graph, int step) {
     int i, j, k;
     int V = graph[0].size();
@@ -118,7 +118,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_par1_c(std::vector<std::
     return graph;
 }
 
-// Strip-mined 1D lines version of Floyd_Marshall algorithm
+// Strip-mined 1D lines version of Floyd_Warshall algorithm
 std::vector<std::vector<unsigned short>> floyd_warshall_par1_l(std::vector<std::vector<unsigned short>> graph, int step) {
     int i, j, k;
     int V = graph[0].size();
@@ -147,7 +147,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_par1_l(std::vector<std::
     return graph;
 }
 
-// Tiled implementation of Floyd_Marshall algorithm,
+// Tiled implementation of Floyd_Warshall algorithm,
 // step = bloc width
 std::vector<std::vector<unsigned short>> floyd_warshall_seq_tiled(std::vector<std::vector<unsigned short>> graph, int step) {
     int V = graph[0].size();
@@ -239,7 +239,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_tiled(std::vector<st
     return graph;
 }
 
-// Tiled parallel implementation of Floyd_Marshall algorithm,
+// Tiled parallel implementation of Floyd_Warshall algorithm,
 // step = bloc width
 std::vector<std::vector<unsigned short>> floyd_warshall_par_tiled(std::vector<std::vector<unsigned short>> graph, int step) {
     int V = graph[0].size();
@@ -336,7 +336,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_par_tiled(std::vector<st
     return graph;
 }
 
-// Tiled implementation of Floyd_Marshall algorithm, with adapted memory layout in blocs
+// Tiled implementation of Floyd_Warshall algorithm, with adapted memory layout in blocs
 // step = bloc width
 std::vector<std::vector<unsigned short>> floyd_warshall_seq_tiled_layout_memPos(std::vector<std::vector<unsigned short>> adjacency_matrix, int step) {
     int V = adjacency_matrix[0].size();
@@ -431,7 +431,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_tiled_layout_memPos(
     return blocLayoutToGraph(graph, V, step, true);
 }
 
-// Tiled implementation of Floyd_Marshall algorithm, with adapted memory layout in blocs
+// Tiled implementation of Floyd_Warshall algorithm, with adapted memory layout in blocs
 // blocSize1D = bloc width
 std::vector<std::vector<unsigned short>> floyd_warshall_seq_tiled_layout(std::vector<std::vector<unsigned short>> adjacency_matrix, int blocSize1D) {
     int V = adjacency_matrix[0].size();
@@ -522,7 +522,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_tiled_layout(std::ve
     return blocLayoutToGraph(graph, V, blocSize1D, true);
 }
 
-// Tiled parallel implementation of Floyd_Marshall algorithm, with adapted memory layout in blocs
+// Tiled parallel implementation of Floyd_Warshall algorithm, with adapted memory layout in blocs
 // blocSize1D = bloc width
 std::vector<std::vector<unsigned short>> floyd_warshall_par_tiled_layout(std::vector<std::vector<unsigned short>> adjacency_matrix, int blocSize1D) {
     int V = adjacency_matrix[0].size();
@@ -615,7 +615,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_par_tiled_layout(std::ve
     return blocLayoutToGraph(graph, V, blocSize1D, true);
 }
 
-// Tiled parallel implementation of Floyd_Marshall algorithm, with a 1 dimension matrix
+// Tiled parallel implementation of Floyd_Warshall algorithm, with a 1 dimension matrix
 std::vector<std::vector<unsigned short>> floyd_warshall_seq_1d(std::vector<std::vector<unsigned short>> adjacency_matrix) {
     int V = adjacency_matrix[0].size();
     std::vector<unsigned short> graph(V*V);
@@ -649,7 +649,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_1d(std::vector<std::
     return output_matrix;
 }
 
-// Tiled parallel implementation of Floyd_Marshall algorithm, with a 1 dimension matrix
+// Tiled parallel implementation of Floyd_Warshall algorithm, with a 1 dimension matrix
 std::vector<std::vector<unsigned short>> floyd_warshall_par_1d(std::vector<std::vector<unsigned short>> adjacency_matrix, int numThreads) {
     int V = adjacency_matrix[0].size();
     std::vector<unsigned short> graph(V*V);
@@ -684,7 +684,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_par_1d(std::vector<std::
     return output_matrix;
 }
 
-// Tiled parallel implementation of Floyd_Marshall algorithm, with adapted memory layout in blocs
+// Tiled parallel implementation of Floyd_Warshall algorithm, with adapted memory layout in blocs
 // step = bloc width
 std::vector<std::vector<unsigned short>> floyd_warshall_par_tiled_layout_memPos(std::vector<std::vector<unsigned short>> adjacency_matrix, int step) {
     int V = adjacency_matrix[0].size();
@@ -784,7 +784,7 @@ std::vector<std::vector<unsigned short>> floyd_warshall_par_tiled_layout_memPos(
     return blocLayoutToGraph(graph, V, step, true);
 }
 
-// Strip-mined 2D version of Floyd_Marshall algorithm
+// Strip-mined 2D version of Floyd_Warshall algorithm
 std::vector<std::vector<unsigned short>> floyd_warshall_par2(std::vector<std::vector<unsigned short>> graph) {
     int i, j, k;
     int V = graph[0].size();

@@ -11,6 +11,7 @@ j="FW_seq_tiled_layout_memPos.txt"
 l="FW_seq_mem.txt"
 m="FW_seq_1d.txt"
 n="FW_par_1d.txt"
+o="FW_gpu.txt"
 
 echo "simple_graph analysis..."
 for i in {0..29};
@@ -24,6 +25,7 @@ do
     diff "simple_graph$i$a" "simple_graph$i$l"
     diff "simple_graph$i$a" "simple_graph$i$m"
     diff "simple_graph$i$a" "simple_graph$i$n"
+    diff "simple_graph$i$a" "simple_graph$i$o"
 done
 
 echo "medium_graph analysis..."
@@ -38,6 +40,7 @@ do
     diff "medium_graph$i$a" "medium_graph$i$l"
     diff "medium_graph$i$a" "medium_graph$i$m"
     diff "medium_graph$i$a" "medium_graph$i$n"
+    diff "medium_graph$i$a" "medium_graph$i$o"
 done
 
 echo "complex_graph analysis..."
@@ -52,6 +55,7 @@ do
     diff "complex_graph$i$a" "complex_graph$i$l"
     diff "complex_graph$i$a" "complex_graph$i$m"
     diff "complex_graph$i$a" "complex_graph$i$n"
+    diff "complex_graph$i$a" "complex_graph$i$o"
 done
 
 echo "very_complex_graph analysis..."
@@ -66,4 +70,5 @@ do
     diff "very_complex_graph$i$a" "very_complex_graph$i$l"
     diff "very_complex_graph$i$a" "very_complex_graph$i$m"
     diff "very_complex_graph$i$a" "very_complex_graph$i$n"
+    diff "very_complex_graph$i$a" "very_complex_graph$i$o"
 done

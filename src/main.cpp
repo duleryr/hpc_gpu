@@ -26,17 +26,18 @@ int main(int argc, char** argv)
     int step = 32;
     int numThreads = 4;
     bool chooseGraph = false;
+    bool openCL = false;
 
     opterr = 0;
     int c;
-    while ((c = getopt (argc, argv, "g:a:dtc:s:n:h")) != -1)
+    while ((c = getopt (argc, argv, "g:a:dtc:s:n:oh")) != -1)
         switch (c)
         {
             case 'a':
                 algorithm = optarg;
-                if (algorithm != "FW_SEQ" && algorithm != "FW_SEQ_MEM" && algorithm != "FW_SEQ_MEM_SKIP" && algorithm != "FW1_C" && algorithm != "FW1_L" && algorithm != "FW_SEQ" && algorithm != "FW2" && algorithm != "FW_SEQ_TILED" && algorithm != "FW_PAR_TILED" && algorithm != "FW_SEQ_TILED_LAYOUT_MEMPOS" && algorithm != "FW_SEQ_TILED_LAYOUT" && algorithm != "FW_SEQ_TILED_LAYOUT2" && algorithm != "FW_PAR_TILED_LAYOUT" && algorithm != "FW_PAR_TILED_LAYOUT_MEMPOS" && algorithm != "FW_SEQ_1D" && algorithm != "FW_PAR_1D") 
+                if (algorithm != "FW_SEQ" && algorithm != "FW_SEQ_MEM" && algorithm != "FW_SEQ_MEM_SKIP" && algorithm != "FW1_C" && algorithm != "FW1_L" && algorithm != "FW_SEQ" && algorithm != "FW2" && algorithm != "FW_SEQ_TILED" && algorithm != "FW_PAR_TILED" && algorithm != "FW_SEQ_TILED_LAYOUT_MEMPOS" && algorithm != "FW_SEQ_TILED_LAYOUT" && algorithm != "FW_SEQ_TILED_LAYOUT2" && algorithm != "FW_PAR_TILED_LAYOUT" && algorithm != "FW_PAR_TILED_LAYOUT_MEMPOS" && algorithm != "FW_SEQ_1D" && algorithm != "FW_PAR_1D" && algorithm != "FW_GPU") 
                 {
-                    cerr << "Unknown algorithm : " << algorithm << endl << "List of algorithms : FW_SEQ, FW_SEQ_MEM, FW_SEQ_MEM_SKIP, FW1_C, FW1_L, FW2, FW_SEQ_TILED, FW_PAR_TILED, FW_SEQ_TILED_LAYOUT_MEMPOS, FW_SEQ_TILED_LAYOUT, FW_SEQ_TILED_LAYOUT2, FW_PAR_TILED_LAYOUT, FW_SEQ_1D, FW_PAR_1D, FW_PAR_TILED_LAYOUT_MEMPOS";
+                    cerr << "Unknown algorithm : " << algorithm << endl << "List of algorithms : FW_SEQ, FW_SEQ_MEM, FW_SEQ_MEM_SKIP, FW1_C, FW1_L, FW2, FW_SEQ_TILED, FW_PAR_TILED, FW_SEQ_TILED_LAYOUT_MEMPOS, FW_SEQ_TILED_LAYOUT, FW_SEQ_TILED_LAYOUT2, FW_PAR_TILED_LAYOUT, FW_SEQ_1D, FW_PAR_1D, FW_PAR_TILED_LAYOUT_MEMPOS, FW_GPU";
                     return 1;
                 }
                 break;
@@ -48,6 +49,9 @@ int main(int argc, char** argv)
                 break;
             case 't':
                 saveTimes = 'y';
+                break;
+            case 'o':
+                openCL = true;
                 break;
             case 'g':
                 filename = optarg;
@@ -66,11 +70,12 @@ int main(int argc, char** argv)
                 break;
             case 'h':
                 cout << "Help options :" << endl;
-                cout << "-a algorithm : choose one algorithm between {FW_SEQ, FW_SEQ_MEM, FW_SEQ_MEM_SKIP, FW1_C, FW1_L, FW_SEQ_TILED, FW_PAR_TILED, FW_SEQ_TILED_LAYOUT, FW_SEQ_TILED_LAYOUT_MEMPOS, FW_PAR_TILED_LAYOUT, FW_PAR_TILED_LAYOUT_MEMPOS, FW_PAR_1D, FW2}" << endl;
+                cout << "-a algorithm : choose one algorithm between {FW_SEQ, FW_SEQ_MEM, FW_SEQ_MEM_SKIP, FW1_C, FW1_L, FW_SEQ_TILED, FW_PAR_TILED, FW_SEQ_TILED_LAYOUT, FW_SEQ_TILED_LAYOUT_MEMPOS, FW_PAR_TILED_LAYOUT, FW_PAR_TILED_LAYOUT_MEMPOS, FW_PAR_1D, FW_GPU, FW2}" << endl;
                 cout << "-d : save output distances of each algorithm" << endl;
                 cout << "-t : save calcul times of each algorithm" << endl;
                 cout << "-c category : apply algorithms to all graph of one category : \"simple\", \"medium\", \"complex\", \"very_complex\", \"huge\"" << endl;
                 cout << "-g graph : apply algorithms to the selected graph : \"simple_graphX\", \"medium_graphX\", \"complex_graphX\", \"very_complex_graphX\", \"huge_graphX\"" << endl;
+                cout << "-o : use openCL implementation" << endl;
                 cout << "-s INT ; choose the step for Floyd_Warshall strip-mined algorithms" << endl;
                 cout << "-h : you just did it don't you remember ?" << endl;
                 return 0;
@@ -335,6 +340,19 @@ int main(int argc, char** argv)
 
             if (tolower(saveInFile[0]) == 'y')
                 save_in_file(distance_matrix, filename, "FW_par_1d");
+        }
+
+        /*------------------------------FLOYD_WARSHALL_GPU----------------------*/
+
+        if (algorithm == "" || algorithm == "FW_GPU")
+        {
+            BlockTimerPar time_par;
+            distance_matrix = floyd_warshall_GPU(adjacency_matrix);
+
+            time_par.display(*stream, "FWGPU", "Floyd_Warshall parallel GPU implemented", numThreads);
+
+            if (tolower(saveInFile[0]) == 'y')
+                save_in_file(distance_matrix, filename, "FW_gpu");
         }
 
         /*------------------------------FLOYD_WARSHALL_PARALLEL2------------------------------------*/
