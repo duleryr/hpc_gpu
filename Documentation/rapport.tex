@@ -265,14 +265,14 @@ L'idée est de couper la matrice en blocs carrés, et de la traiter selon un ord
 ~\\\\\\
 \indent Cet algorithme est fait pour qu'il soit cache-oblivious, de manière à ce qu'un bloc soit de la taille du cache. En effet, pour calculer chaque bloc, cela nécessite de charger seulement 1 bloc en étape 1, 2 bloc en étape 2, et 3 blocs en étape 3.
 
-\subsection{Floyd-Warshall parallèle, avec una matrice coupée en bloc carrés}
+\subsection{Floyd-Warshall parallèle, avec une matrice coupée en bloc carrés}
 
 \noindent Code d'entrée : FW\_PAR\_TILED \\
 Code de sortie : FWPTI (Floyd-Warshall parallèle tiled-implemented)\\
 
 C'est la version parallèle de l'algorithme précédent.
 
-\subsection{Floyd-Warshall séquentiel, avec una matrice coupée en blocs carrés, avec une disposition adaptée de la mémoire}
+\subsection{Floyd-Warshall séquentiel, avec une matrice coupée en blocs carrés, avec une disposition adaptée de la mémoire}
 
 \noindent Code d'entrée : FW\_SEQ\_TILED\_LAYOUT \\
 Code de sortie : FWSTB (Floyd-Warshall séquentiel tiled-bloc implemented)
@@ -285,7 +285,7 @@ C'est le même algorithme que précédemment, avec une disposition adaptée de l
 
 L'idée est de réduire énormément le nombre de défauts de cache.
 
-\subsection{Floyd-Warshall parallèle, avec una matrice coupée en blocs carrés, avec une disposition adaptée de la mémoire}
+\subsection{Floyd-Warshall parallèle, avec une matrice coupée en blocs carrés, avec une disposition adaptée de la mémoire}
 
 \noindent Code d'entrée : FW\_PAR\_TILED\_LAYOUT \\
 Code de sortie : FWPTB (Floyd-Warshall parallel tiled-bloc implemented)\\
@@ -305,7 +305,7 @@ C'est l'algorithme basique, avec une représentation 1D de la matrice.
 
 Il peut se voir comme un cas particulier de l'algorithme précédent, quand il n'y a qu'un seul bloc.
 
-\subsection{Floyd-Warshall parallèle, avec una matrice en une dimension}
+\subsection{Floyd-Warshall parallèle, avec une matrice en une dimension}
 
 \noindent Code d'entrée : FW\_PAR\_1D \\
 Code de sortie : FWP1D
@@ -318,6 +318,20 @@ Code de sortie : FWP1D
 \end{figure}
 
 La version parallèle de l'algorithme précédent.
+
+\subsection{Floyd-Warshall parallèle, implémentation GPU}
+
+\noindent Code d'entrée : FW\_GPU \\
+Code de sortie : FWGPU
+
+\begin{figure}[H]
+\begin{center}
+  \includegraphics[scale=0.5]{OpenCL_FW.png}
+  \caption{Idée de l'implémentation GPU de Floyd-Warshall}
+\end{center}
+\end{figure}
+
+La version OpenCL de l'algorithme précédent.
 
 \section{Garantie de l'exactitude des sorties}
 \subsection{Vérité Terrain}
@@ -344,7 +358,7 @@ Si tous les algorithmes produisent la même sortie que l'algorithme basique, on 
   \end{center}
 \end{minipage}
 
-\section{Comparatif de performances}
+\section{Comparatif de performances des algorithmes CPU}
 
 Les comparatifs se font sur les graphes de taille au moins moyenne.
 
@@ -517,6 +531,53 @@ Voici les temps de calcul des principaux algorithmes, exprimés en secondes, sur
     \hline
   \end{tabular}
 \end{center}
+
+\section{Comparatif de performances GPU vs CPU}
+
+La configuration utilisée dans cette partie est différente, mon ordinateur habituel n'ayant pas accès à OpenCL.\\
+Voici les caractéristiques du CPU :\\
+
+\begin{itemize}
+  \item Processeur : Intel(R) Core(TM) i5-6300HQ CPU @ 2.30GHz
+  \item 4 threads
+  \item Taille de cache : 6144 KB
+  \item Compilateur : g++ 5.4.0
+  \item Optimisation : O3
+\end{itemize}
+
+Voici celles du GPU :
+
+\begin{figure}[H]
+\begin{center}
+  \includegraphics[scale=0.6]{GPU_info.png}
+  \caption{Caractéristiques du GPU}
+\end{center}
+\end{figure}
+
+Les résultats sont les suivants, sur le graphe de référence numéro 5 :
+
+\begin{center}
+    \begin{tabular}{p{7cm} | p{2.5cm}}
+    \textbf{Algorithme} &  \textbf{V = 3200} \\
+    \hline
+    Basique & 22.4745 \\
+    \hline
+    Basique avec mémoïzation & 22.826 \\
+    \hline
+    Basique avec mémoïzation et sauts d'infinis & 9.8378 \\
+    \hline
+    Séquentiel 1d & 10.7011 \\
+    \hline
+    parallèle 1d 4 threads & 5.4638 \\
+    \hline
+    FWPTB & 5.4165 \\
+    \hline
+    Parallèle GPU OpenCL & 1.4488 \\
+    \hline
+  \end{tabular}
+\end{center}
+
+On constate que l'implémentation GPU possède de meilleures performances, ce qui était relativement prévisible étant donné le nombre de threads impliqué.
 
 \section{Explication des résultats}
 \subsection{L'importance de la gestion du cache en ligne}
