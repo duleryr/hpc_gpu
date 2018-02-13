@@ -693,7 +693,6 @@ std::vector<std::vector<unsigned short>> floyd_warshall_GPU(std::vector<std::vec
     d_graph = cl::Buffer(context, std::begin(h_graph), std::end(h_graph), true);
 
     for (k = 0; k < V; k++) {
-    //for (k = 0; k < 1; k++) {
 	floyd_cl(
 		cl::EnqueueArgs(
 		    queue,
@@ -701,7 +700,6 @@ std::vector<std::vector<unsigned short>> floyd_warshall_GPU(std::vector<std::vec
 		d_graph,
 		V,
 		k);
-
 	queue.finish();
     }
 
