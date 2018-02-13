@@ -26,11 +26,10 @@ int main(int argc, char** argv)
     int step = 32;
     int numThreads = 4;
     bool chooseGraph = false;
-    bool openCL = false;
 
     opterr = 0;
     int c;
-    while ((c = getopt (argc, argv, "g:a:dtc:s:n:oh")) != -1)
+    while ((c = getopt (argc, argv, "g:a:dtc:s:n:h")) != -1)
         switch (c)
         {
             case 'a':
@@ -49,9 +48,6 @@ int main(int argc, char** argv)
                 break;
             case 't':
                 saveTimes = 'y';
-                break;
-            case 'o':
-                openCL = true;
                 break;
             case 'g':
                 filename = optarg;
@@ -75,7 +71,6 @@ int main(int argc, char** argv)
                 cout << "-t : save calcul times of each algorithm" << endl;
                 cout << "-c category : apply algorithms to all graph of one category : \"simple\", \"medium\", \"complex\", \"very_complex\", \"huge\"" << endl;
                 cout << "-g graph : apply algorithms to the selected graph : \"simple_graphX\", \"medium_graphX\", \"complex_graphX\", \"very_complex_graphX\", \"huge_graphX\"" << endl;
-                cout << "-o : use openCL implementation" << endl;
                 cout << "-s INT ; choose the step for Floyd_Warshall strip-mined algorithms" << endl;
                 cout << "-h : you just did it don't you remember ?" << endl;
                 return 0;

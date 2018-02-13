@@ -16,6 +16,8 @@
 // Definition of infinity in order to be able to sum 2 infinites without having to define a new class Infinity
 #define infinity std::numeric_limits<unsigned short>::max()/2 - 1
 
+#define DEBUG_GPU false
+
 // Basic Floyd_Warshall algorithm
 std::vector<std::vector<unsigned short>> floyd_warshall_seq(std::vector<std::vector<unsigned short>> graph)
 {
@@ -630,11 +632,6 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_1d(std::vector<std::
         }
     }
 
-    for (i = 0; i < V*V; i++) {
-	std::cout << graph[i] << " ";
-    }
-    std::cout << std::endl;
-
     for (k = 0; k < V; k++) {
         // Bloc (k,k)
         for (i = 0; i < V; i++) {
@@ -648,12 +645,6 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_1d(std::vector<std::
                 }
             }
         }
-
-	std::cout << "k = " << k << std::endl;
-	for (i = 0; i < V*V; i++) {
-	    std::cout << graph[i] << " ";
-	}
-	std::cout << std::endl;
     }
 
     std::vector<std::vector<unsigned short>> output_matrix(V, std::vector<unsigned short>(V));
@@ -661,7 +652,6 @@ std::vector<std::vector<unsigned short>> floyd_warshall_seq_1d(std::vector<std::
         output_matrix[i / V][i % V] = graph[i];
     }
 
-    std::cout << std::endl;
     return output_matrix;
 }
 
@@ -676,10 +666,12 @@ std::vector<std::vector<unsigned short>> floyd_warshall_GPU(std::vector<std::vec
         }
     }
 
+#if DEBUG_GPU
     for (i = 0; i < V*V; i++) {
 	std::cout << h_graph[i] << " ";
     }
     std::cout << std::endl;
+#endif
 
     // OpenCL part
     util::Timer timer;
@@ -716,11 +708,13 @@ std::vector<std::vector<unsigned short>> floyd_warshall_GPU(std::vector<std::vec
     cl::copy(queue, d_graph, std::begin(h_graph), std::end(h_graph));
 
     std::vector<std::vector<unsigned short>> output_matrix(V, std::vector<unsigned short>(V));
+#if DEBUG_GPU
     for (i = 0; i < V*V; i++) {
         output_matrix[i / V][i % V] = h_graph[i];
 	std::cout << h_graph[i] << " ";
     }
     std::cout << std::endl;
+#endif
 
     return output_matrix;
 }

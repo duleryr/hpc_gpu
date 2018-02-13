@@ -29,24 +29,22 @@ debug:
 test:
 	$(CXX) $(CSTEST) $(CXXFLAGS) -o $@ 
 
-doc:
-	pdflatex -output-directory=Documentation/ Documentation/Presentacion_proyecto.tex
-
-all: $(PROG) test doc sinopti
-#all: $(PROG) debug test doc sinopti
+all: $(PROG) test sinopti
 
 clean :
 	rm -f ./main
 	rm -f ./debug
 	rm -f ./test
 	rm -f ./sinopti
-	rm -f Documentation/Presentacion_proyecto.aux
-	rm -f Documentation/Presentacion_proyecto.log
-	rm -f Documentation/Presentacion_proyecto.dvi
-	rm -f Documentation/Presentacion_proyecto.pdf
+	rm -f Documentation/rapport.aux
+	rm -f Documentation/rapport.log
+	rm -f Documentation/rapport.dvi
+	rm -f Documentation/rapport.pdf
 	rm -f Output_Files/basic*.txt
 	rm -f Output_Files/simple*.txt
 	rm -f Output_Files/medium*.txt
 	rm -f Output_Files/complex*.txt
+	# On supprime pas les very_complex et huge par défaut, ils prennent trop de temps de calcul
+	rm -f Output_Files/reference*.txt
 
 .PHONY: all debug test clean sinopti
